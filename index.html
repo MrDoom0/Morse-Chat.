@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Morse Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body dir="ltr"> <!-- RTL toggleable -->
+
+    <!-- Splash Screen Animation -->
+    <div id="splashScreen" class="splash-screen">
+        <h1 class="splash-title" data-i18n="app_title">Morse Chat</h1>
+    </div>
+
+    <div id="appShell" class="app-shell hidden">
+        <!-- Sidebar / Navigation -->
+        <nav class="main-nav glass-panel">
+            <h2 class="app-logo" data-i18n="app_title">Morse Chat</h2>
+            <div class="nav-links">
+                <button class="nav-btn active" data-target="lobby" data-i18n="nav_lobby">Lobby</button>
+                <button class="nav-btn" data-target="chat" data-i18n="nav_chat">Active Chat</button>
+                <button class="nav-btn" data-target="catalog" data-i18n="nav_catalog">Catalog</button>
+                <button class="nav-btn" data-target="profile" data-i18n="nav_profile">Profile</button>
+            </div>
+            <div id="peerStatus" class="global-status disconnected" data-i18n="status_offline">Offline</div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="content-area">
+            
+            <!-- Lobby Channel -->
+            <section id="lobby" class="channel active-channel">
+                <h2 class="channel-title" data-i18n="nav_lobby">Lobby</h2>
+                
+                <div class="lobby-grid">
+                    <!-- Host Section -->
+                    <div class="card glass-panel">
+                        <h3 data-i18n="host_title">Host a Room</h3>
+                        <div class="form-group">
+                            <label data-i18n="host_label_name">Channel Name</label>
+                            <input type="text" id="hostChannelName" class="input-base" placeholder="My Awesome Room">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="host_label_lang">Language Option</label>
+                            <select id="hostLanguage" class="input-base">
+                                <option value="english" data-i18n="opt_en">English Only</option>
+                                <option value="arabic" data-i18n="opt_ar">Arabic Only</option>
+                                <option value="multilingual" selected data-i18n="opt_multi">Multilingual</option>
+                            </select>
+                        </div>
+                        <button id="btnCreateRoom" class="btn-primary" data-i18n="btn_create">Create Room</button>
+                        <div id="hostFeedback" class="feedback-text"></div>
+                    </div>
+
+                    <!-- Join Section -->
+                    <div class="card glass-panel">
+                        <h3 data-i18n="join_title">Join a Room</h3>
+                        <div class="form-group">
+                            <label data-i18n="join_label_id">Host Peer ID</label>
+                            <input type="text" id="joinHostId" class="input-base" placeholder="morsechat-XXXXXX">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="join_label_key">6-Digit Key</label>
+                            <input type="text" id="joinRoomKey" class="input-base" placeholder="123456" maxlength="6">
+                        </div>
+                        <button id="btnJoinRoom" class="btn-primary" data-i18n="btn_connect">Connect</button>
+                        <div id="joinFeedback" class="feedback-text"></div>
+                    </div>
+                </div>
+
+                <!-- Active Rooms Section -->
+                <div class="card glass-panel active-rooms-card">
+                    <h3 data-i18n="active_rooms">Active Rooms</h3>
+                    <ul id="activeRoomsList" class="room-list">
+                        <li class="empty-list" data-i18n="no_rooms">No active rooms right now.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Active Chat Channel -->
+            <section id="chat" class="channel hidden">
+                <div class="chat-wrapper">
+                    <header class="chat-header glass-panel">
+                        <h2 id="currentChatTitle">Not in a room</h2>
+                        <span id="currentChatLang" class="badge">--</span>
+                    </header>
+                    
+                    <div id="chatMessages" class="chat-messages glass-panel">
+                        <div class="chat-placeholder" data-i18n="chat_placeholder">Join or Host a room from the Lobby</div>
+                    </div>
+                    
+                    <!-- Cheat Sheet Overlay -->
+                    <div id="chatCheatSheet" class="chat-cheat-sheet glass-panel hidden"></div>
+
+                    <!-- Enhanced Keyboard Docking -->
+                    <div class="keyboard-dock glass-panel">
+                        <div class="dock-header">
+                            <div class="preview-area">
+                                <div id="previewMorse" class="preview-morse"></div>
+                                <div id="previewText" class="preview-text"></div>
+                            </div>
+                            <div class="keyboard-controls">
+                                <label>WPM: <span id="wpmLabel">20</span></label>
+                                <input type="range" id="chatWpmSlider" min="5" max="50" value="20">
+                                <select id="keyboardModeSelector" class="input-base compact">
+                                    <option value="standard" data-i18n="mode_std">Standard (Mode 1)</option>
+                                    <option value="realistic" data-i18n="mode_real">Realistic (Mode 2)</option>
+                                    <option value="text" data-i18n="mode_text">Text (Native)</option>
+                                </select>
+                                <button id="btnCheatSheet" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; width: auto;" data-i18n="btn_cheatsheet">Cheat Sheet</button>
+                            </div>
+                        </div>
+
+                        <!-- Mode 1: Standard -->
+                        <div id="kbMode1" class="keyboard-mode active-kb" style="flex-wrap: wrap;">
+                            <button class="kbd-btn" id="kb1Dot">.</button>
+                            <button class="kbd-btn" id="kb1Dash">-</button>
+                            <button class="kbd-btn" id="kb1Space" data-i18n="btn_space" style="flex: 2;">Space</button>
+                            <button class="kbd-btn action-btn bg-danger" id="kb1Backspace">⌫</button>
+                            <button class="kbd-btn action-btn bg-success" id="kb1Send" data-i18n="btn_send">Send</button>
+                        </div>
+
+                        <!-- Mode 2: Realistic -->
+                        <div id="kbMode2" class="keyboard-mode hidden" style="flex-wrap: wrap;">
+                            <div class="progress-bar-container" style="width: 100%; height: 8px; background: rgba(128,128,128,0.2); border-radius: 4px; overflow: hidden; margin-bottom: 5px; flex: none;">
+                                <div id="kb2ProgressBar" class="progress-bar-fill" style="height: 100%; width: 0%; background: #3b82f6;"></div>
+                            </div>
+                            <button class="kbd-btn giant-tap" id="kb2Tap" data-i18n="btn_tap_hold" style="flex: 3;">TAP / HOLD</button>
+                            <button class="kbd-btn action-btn bg-danger small-send" id="kb2Backspace" style="flex: 0.5;">⌫</button>
+                            <button class="kbd-btn action-btn bg-success small-send" id="kb2Send" data-i18n="btn_send" style="flex: 1;">Send</button>
+                        </div>
+
+                        <!-- Mode 3: Native Text -->
+                        <div id="kbMode3" class="keyboard-mode hidden">
+                            <input type="text" id="nativeChatInput" class="input-base" placeholder="Type naturally here...">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Catalog Channel -->
+            <section id="catalog" class="channel hidden">
+                <h2 class="channel-title" data-i18n="nav_catalog">Catalog</h2>
+                <div class="catalog-controls glass-panel">
+                    <button id="catFilterEn" class="btn-primary" data-i18n="btn_cat_en">English Symbols</button>
+                    <button id="catFilterAr" class="btn-primary" data-i18n="btn_cat_ar">Arabic Symbols</button>
+                </div>
+                <div id="catalogGrid" class="catalog-grid glass-panel"></div>
+            </section>
+
+            <!-- Profile Channel -->
+            <section id="profile" class="channel hidden">
+                <h2 class="channel-title" data-i18n="nav_profile">Profile</h2>
+                <div class="profile-grid">
+                    
+                    <div class="card glass-panel">
+                        <h3 data-i18n="profile_id_title">Identity</h3>
+                        <div class="form-group">
+                            <label data-i18n="profile_nickname">Nickname</label>
+                            <input type="text" id="profileNickname" class="input-base" placeholder="Anonymous">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="profile_network_id">Your Network ID</label>
+                            <div class="id-display" id="myNetworkId">Locating...</div>
+                        </div>
+                    </div>
+
+                    <div class="card glass-panel">
+                        <h3 data-i18n="profile_settings_title">Settings</h3>
+                        
+                        <div class="setting-row">
+                            <label data-i18n="profile_theme">Theme</label>
+                            <button id="themeToggleBtn" class="btn-primary" data-i18n="btn_theme">Switch to Light Mode</button>
+                        </div>
+                        
+                        <!-- Differentiated settings per user request -->
+                        <div class="setting-row" style="margin-top: 15px;">
+                            <label data-i18n="profile_ui_lang">UI Translation Language</label>
+                            <button id="uiLangToggleBtn" class="btn-primary" data-i18n="btn_uilang">Current: English</button>
+                        </div>
+
+                        <div class="setting-row" style="margin-top: 15px;">
+                            <label data-i18n="profile_morse_lang">Morse Writing System</label>
+                            <button id="langToggleBtn" class="btn-primary" data-i18n="btn_morselang">Current: English</button>
+                        </div>
+
+                    </div>
+
+                </div>
+            </section>
+            
+        </main>
+    </div>
+
+    <!-- WebRTC Client -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- Code Logic -->
+    <script src="audio.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
